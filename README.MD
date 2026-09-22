@@ -124,15 +124,15 @@ Overall, while GClus demonstrates slightly higher computational demands on compl
 
 ---
 
-## D) Computational Complexity and Convergence Analysis
+## E) Computational Complexity and Convergence Analysis
 
 This appendix provides an analysis of the computational complexity and convergence behavior of \gclus. The analysis is intended to clarify the cost of each stage of the algorithm and the conditions under which the iterative refinement process terminates.
 
-\subsection{Notation}
+### Notation
 
 Let $G=(V,E)$ be an undirected and unweighted graph, where $n=|V|$ is the number of nodes and $m=|E|$ is the number of edges. Let $k$ be the number of communities to be obtained, $h$ the maximum allowed community size, $l$ the minimum allowed community size, and $i_{\max}$ the maximum number of refinement iterations. We denote by $d(v)$ the degree of node $v$, and by $\Delta$ the maximum degree in the graph.
 
-\subsection{Computational Complexity}
+### Computational Complexity
 
 The \gclus pipeline consists of two main stages: initial community extraction and iterative refinement.
 
