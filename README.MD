@@ -303,7 +303,204 @@ The complexity analysis explains the empirical behavior observed in the experime
 
 The convergence behavior also explains the observed trade-off between size feasibility and clustering quality. When the prescribed target sizes are aligned with the natural community structure, \gclus can satisfy the size constraints while preserving strong structural quality. When the prescribed sizes conflict with the intrinsic graph structure, the algorithm may need to move nodes across natural boundaries, which can reduce AMI or modularity. This behavior is consistent with the design goal of \gclus: prioritizing explicit cardinality control while maintaining reasonable structural cohesion.
 
+---
 
+```markdown
+## E) Computational Complexity and Convergence Analysis
+
+This appendix summarizes the computational complexity and convergence behavior of **GClus**. The goal is to clarify the cost of each stage of the algorithm and the conditions under which the refinement process terminates.
+
+### Notation
+
+Let $G=(V,E)$ be an undirected and unweighted graph, where $n=|V|$ is the number of nodes and $m=|E|$ is the number of edges. Let $k$ be the number of communities, $h$ the maximum allowed community size, $l$ the minimum allowed community size, and $i_{\max}$ the maximum number of refinement iterations. We denote by $\Delta$ the maximum degree in the graph.
+
+### Computational Complexity
+
+The GClus pipeline has two main stages: **initial community extraction** and **iterative refinement**.
+
+#### Pivot selection
+
+The pivot selection step computes the degree of each node and sorts the nodes according to this score. Computing all degrees requires $O(n+m)$ time, while sorting requires $O(n\log n)$ time. Therefore, the cost of pivot selection is:
+
+$$
+O(n+m+n\log n).
+$$
+
+#### Initial community extraction
+
+For each pivot, GClus builds an initial community using `GC-Base` and `GC-BranchBoundP`. The expansion is guided by the score:
+
+$$
+S(v,C)=\alpha\tau(v)+\beta\Delta(v,C).
+$$
+
+If trussness values are precomputed, evaluating candidate nodes mainly depends on the inspected neighborhood of the current community. In the worst case, a community can expand up to the upper size bound $h$, and each step may inspect up to $\Delta$ neighboring nodes. Thus, the cost per community can be bounded by:
+
+$$
+O(h\Delta).
+$$
+
+For $k$ communities, the initial extraction stage is bounded by:
+
+$$
+O(kh\Delta).
+$$
+
+If trussness values are computed from scratch, an additional preprocessing cost must be considered. This cost depends on the truss decomposition implementation, since triangle-based support calculations are more expensive than simple degree computation.
+
+#### Branch-and-bound refinement
+
+The `GC-BranchBoundP` procedure evaluates candidate nodes from the boundary set $R$. In the worst case, $|R|$ can be bounded by $O(h\Delta)$ for a community of size at most $h$. If cohesion scores are updated incrementally, the cost per community remains bounded by:
+
+$$
+O(h\Delta),
+$$
+
+and across $k$ communities by:
+
+$$
+O(kh\Delta).
+$$
+
+#### Non-clustered node assignment
+
+Let $n_u$ be the number of unassigned nodes after the initial extraction stage. Each unassigned node can be compared with up to $k$ communities with available capacity. Therefore, this step has complexity:
+
+$$
+O(n_u k).
+$$
+
+If conductance is recomputed from scratch for each possible insertion, the cost can increase depending on the number of incident edges. With incremental updates, the practical cost is closer to the number of inspected node-community connections.
+
+#### Merge small communities
+
+The merge step considers communities whose size is below the lower bound $l$ and searches for a compatible neighboring community. In the worst case, each community may be compared with the remaining $k-1$ communities. Therefore, the merge phase is bounded by:
+
+$$
+O(k^2),
+$$
+
+plus the cost of evaluating inter-community conductance.
+
+#### Split large communities
+
+The split phase is applied to communities whose size exceeds the upper bound $h$. Let $s_i=|C_i|$ be the size of a community selected for splitting, and let $m_i$ be the number of edges in the induced subgraph $G[C_i]$. Constructing the induced subgraph requires:
+
+$$
+O(s_i+m_i).
+$$
+
+The cost of the partitioning step depends on the graph partitioning strategy used. If a local partitioning heuristic or recursive bisection strategy is used, the cost is typically close to linear in the size of the induced subgraph. For all communities selected for splitting, the total cost can be approximated by:
+
+$$
+O\left(\sum_i (s_i+m_i)\right).
+$$
+
+In the worst case, this can approach $O(n+m)$ per refinement iteration.
+
+#### Node adjustment
+
+The adjustment step moves weakly integrated nodes from oversized communities to communities with available capacity. In the worst case, each node may be considered for reassignment and compared with up to $k-1$ communities. This gives a bound of:
+
+$$
+O(nk)
+$$
+
+per refinement iteration.
+
+If shortest-path distances from pivots are recomputed during this phase, the cost increases. In an unweighted graph, running breadth-first search from each pivot costs:
+
+$$
+O(k(n+m)).
+$$
+
+If these distances are precomputed once per iteration and reused, this cost is paid once per iteration rather than once per reassignment.
+
+#### Overall complexity
+
+Combining the previous components, the initial construction stage has approximate complexity:
+
+$$
+O(n+m+n\log n+kh\Delta),
+$$
+
+assuming that trussness values are already available or precomputed separately.
+
+The iterative refinement stage has an approximate per-iteration cost of:
+
+$$
+O(n_u k+k^2+n+m+nk).
+$$
+
+Therefore, for at most $i_{\max}$ refinement iterations, the total complexity can be summarized as:
+
+$$
+O(n+m+n\log n+kh\Delta+i_{\max}(n_u k+k^2+n+m+nk)).
+$$
+
+Since $n_u \leq n$, this can be simplified as:
+
+$$
+O(n+m+n\log n+kh\Delta+i_{\max}(nk+k^2+n+m)).
+$$
+
+If shortest-path distances from pivots are recomputed in every iteration, the refinement term can increase to:
+
+$$
+O(i_{\max}(k(n+m)+nk+k^2)).
+$$
+
+This shows that the main computational cost comes from the iterative refinement phase, especially when repeated split, merge, and reassignment operations are required.
+
+### Memory Complexity
+
+GClus stores the graph structure, the current community assignments, pivot nodes, candidate sets, and auxiliary information such as degrees, trussness scores, and conductance-related values. Storing the graph requires:
+
+$$
+O(n+m).
+$$
+
+The community assignment structure requires $O(n)$ memory, since each node belongs to one community in the final partition. Candidate sets and temporary induced subgraphs may require additional memory. In the worst case, temporary induced subgraphs constructed during splitting can also approach:
+
+$$
+O(n+m).
+$$
+
+Therefore, the overall memory complexity is:
+
+$$
+O(n+m),
+$$
+
+with additional temporary overhead during the split and reassignment phases.
+
+### Convergence and Termination
+
+GClus is a heuristic algorithm and does not guarantee convergence to a globally optimal graph partition under size constraints. This is expected because the method combines two competing goals: structural community quality and explicit cardinality control.
+
+The algorithm terminates under one of the following conditions:
+
+1. all communities satisfy the required size bounds and no further reassignment improves the current partition; or
+2. the maximum number of refinement iterations $i_{\max}$ is reached.
+
+Each refinement step modifies the current partition through one of four operations: assigning unclustered nodes, merging small communities, splitting oversized communities, or reassigning weakly integrated nodes. These operations are designed to reduce size violations or improve local structural consistency.
+
+Let the size deviation of a partition be defined as:
+
+$$
+D(\mathcal{C})=\sum_{i=1}^{k}\left||C_i|-s_i\right|,
+$$
+
+where $s_i$ is the target size of community $C_i$. The refinement phase attempts to reduce $D(\mathcal{C})$ by moving nodes from oversized communities to undersized ones, splitting communities larger than $h$, and merging communities smaller than $l$.
+
+In practice, this process stabilizes after a finite number of iterations because the number of possible node assignments is finite and the algorithm stops after $i_{\max}$ iterations. Thus, GClus guarantees finite termination by construction. However, it does not guarantee that the final partition is globally optimal with respect to modularity, conductance, AMI, or any combined constrained objective.
+
+### Discussion
+
+This analysis explains the empirical behavior observed in the experiments. On small and medium graphs, the additional cost of enforcing size constraints is limited because split, merge, and reassignment operations are applied to relatively small induced subgraphs. On larger or structurally irregular datasets, the refinement phase becomes more expensive because more iterations and node movements may be required to reduce size deviations.
+
+The convergence behavior also reflects the trade-off between size feasibility and clustering quality. When the target sizes are aligned with the natural community structure, GClus can satisfy the size constraints while preserving strong structural quality. When the prescribed sizes conflict with the intrinsic graph structure, the algorithm may need to move nodes across natural boundaries, which can reduce AMI or modularity. This behavior is consistent with the design goal of GClus: prioritizing explicit cardinality control while maintaining reasonable structural cohesion.
+```
 
 
 
