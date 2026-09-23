@@ -305,7 +305,6 @@ The convergence behavior also explains the observed trade-off between size feasi
 
 ---
 
-```markdown
 ## E) Computational Complexity and Convergence Analysis
 
 This appendix summarizes the computational complexity and convergence behavior of **GClus**. The goal is to clarify the cost of each stage of the algorithm and the conditions under which the refinement process terminates.
@@ -500,9 +499,6 @@ In practice, this process stabilizes after a finite number of iterations because
 This analysis explains the empirical behavior observed in the experiments. On small and medium graphs, the additional cost of enforcing size constraints is limited because split, merge, and reassignment operations are applied to relatively small induced subgraphs. On larger or structurally irregular datasets, the refinement phase becomes more expensive because more iterations and node movements may be required to reduce size deviations.
 
 The convergence behavior also reflects the trade-off between size feasibility and clustering quality. When the target sizes are aligned with the natural community structure, GClus can satisfy the size constraints while preserving strong structural quality. When the prescribed sizes conflict with the intrinsic graph structure, the algorithm may need to move nodes across natural boundaries, which can reduce AMI or modularity. This behavior is consistent with the design goal of GClus: prioritizing explicit cardinality control while maintaining reasonable structural cohesion.
-```
-
-
 
 ---
 
