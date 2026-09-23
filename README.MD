@@ -126,8 +126,6 @@ Overall, while GClus demonstrates slightly higher computational demands on compl
 
 ## E) Computational Complexity and Convergence Analysis
 
-This appendix summarizes the computational complexity and convergence behavior of **GClus**. The goal is to clarify the cost of each stage of the algorithm and the conditions under which the refinement process terminates.
-
 ### Notation
 
 Let $G=(V,E)$ be an undirected and unweighted graph, where $n=|V|$ is the number of nodes and $m=|E|$ is the number of edges. Let $k$ be the number of communities, $h$ the maximum allowed community size, $l$ the minimum allowed community size, and $i_{\max}$ the maximum number of refinement iterations. We denote by $\Delta$ the maximum degree in the graph.
